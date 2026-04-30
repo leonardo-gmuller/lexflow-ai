@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/dto"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/entity"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/port"
 )
@@ -25,7 +26,15 @@ type ProcessDocument struct {
 	embedder  port.Embedder
 }
 
-func NewDocumentUsecase(documentRepo documentRepository, storage storage, queue Queue) *DocumentUsecase {
+type DocumentUsecaseInterface interface {
+	UploadDocument(ctx context.Context, input UploadDOcumentInput) error
+}
+
+type ProcessDocumentInterface interface {
+	Execute(ctx context.Context, job dto.ProcessDocumentJob) error
+}
+
+func NewDocumentUsecase(documentRepo documentRepository, storage storage, queue Queue) DocumentUsecaseInterface {
 	return &DocumentUsecase{
 		documentRepo: documentRepo,
 		storage:      storage,
@@ -40,7 +49,7 @@ func NewProcessDocument(
 	extractor textExtractor,
 	chunker chunker,
 	embedder port.Embedder,
-) *ProcessDocument {
+) ProcessDocumentInterface {
 	return &ProcessDocument{
 		docRepo:   docRepo,
 		chunkRepo: chunkRepo,

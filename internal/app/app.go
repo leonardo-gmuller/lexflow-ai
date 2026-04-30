@@ -41,7 +41,7 @@ func New(cfg config.Config,
 	}
 }
 
-func (a *App) NewDocumentUsecase(dbtx postgres.DBTX) *document.DocumentUsecase {
+func (a *App) NewDocumentUsecase(dbtx postgres.DBTX) document.DocumentUsecaseInterface {
 	return document.NewDocumentUsecase(
 		documentRepo.NewDocumentRepository(dbtx),
 		a.Storage,
@@ -49,7 +49,7 @@ func (a *App) NewDocumentUsecase(dbtx postgres.DBTX) *document.DocumentUsecase {
 	)
 }
 
-func (a *App) NewProcessDocumentUsecase(dbtx postgres.DBTX) *document.ProcessDocument {
+func (a *App) NewProcessDocumentUsecase(dbtx postgres.DBTX) document.ProcessDocumentInterface {
 	return document.NewProcessDocument(
 		documentRepo.NewDocumentRepository(dbtx),
 		nil, // chunkRepo - implementar depois
