@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/dto"
@@ -62,4 +63,23 @@ func ConvertListCaseToResponse(cases []entity.Case) []ListCasesResponse {
 var ValidSortCasesFields = map[string]bool{
 	"created_at": true,
 	"name":       true,
+}
+
+// -------------------------------UPLOAD DOCUMENT-------------------------------
+
+type UploadDocumentToCaseRequest struct {
+	File *bytes.Buffer `json:"file"`
+}
+
+func (r *UploadDocumentToCaseRequest) Validate() error {
+	if r.File == nil || r.File.Len() == 0 {
+		return fmt.Errorf("file is required")
+	}
+
+	return nil
+}
+
+type UploadDocumentToCaseResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }

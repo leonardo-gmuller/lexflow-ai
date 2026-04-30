@@ -30,7 +30,7 @@ type ProcessDocument struct {
 }
 
 type DocumentUsecaseInterface interface {
-	UploadDocument(ctx context.Context, input UploadDOcumentInput) error
+	UploadDocument(ctx context.Context, input UploadDocumentInput) (*entity.Document, error)
 }
 
 type ProcessDocumentInterface interface {

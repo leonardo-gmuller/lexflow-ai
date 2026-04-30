@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/entity"
 	case_usecase "github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/usecase/case"
+	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/usecase/document"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/api/handler/schema"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/api/rest"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/api/rest/response"
@@ -23,6 +25,7 @@ func (h *Handler) caseSetupRoutes(router chi.Router) {
 	router.Route(casePattern, func(r chi.Router) {
 		r.Post("/", h.createCase())
 		r.Get("/", h.listAllCases())
+		r.Post("/{id}/documents", h.uploadDocumentToCase())
 	})
 }
 
@@ -120,5 +123,74 @@ func (h *Handler) listAllCases() http.HandlerFunc {
 		resp := response.OK(output)
 		rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers) //nolint:errcheck
 
+	}
+}
+
+func (h *Handler) uploadDocumentToCase() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		caseID := chi.URLParam(r, "id")
+
+		defer r.Body.Close()
+
+		var resp *response.Response
+
+		if err := r.ParseMultipartForm(20 << 20); err != nil {
+			resp = response.BadRequest(err, "invalid multipart form")
+			rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers)
+			return
+		}
+
+		file, header, err := r.FormFile("file")
+		if err != nil {
+			resp = response.BadRequest(nil, "file is required")
+			rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers)
+			return
+		}
+		defer file.Close()
+
+		content, readErr := io.ReadAll(file)
+		if readErr != nil {
+			resp = response.InternalServerError(fmt.Errorf("failed to read file: %w", readErr))
+			rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers)
+			return
+		}
+
+		mimeType := header.Header.Get("Content-Type")
+		if mimeType == "" || mimeType != "application/pdf" {
+			resp = response.BadRequest(nil, "invalid file type: only PDF files are allowed")
+			rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers)
+			return
+		}
+
+		var doc *entity.Document
+
+		err = h.app.DB.WithTx(r.Context(), func(ctx context.Context, db postgres.DBTX) error {
+			uc := h.app.NewDocumentUsecase(db)
+
+			result, err := uc.UploadDocument(ctx, document.UploadDocumentInput{
+				CaseID:   caseID,
+				FileName: header.Filename,
+				Content:  content,
+			})
+			if err != nil {
+				return err
+			}
+
+			doc = result
+			return nil
+		})
+
+		if err != nil {
+			resp = response.InternalServerError(err)
+			rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers) //nolint:errcheck
+			return
+		}
+
+		resp = response.Created(schema.UploadDocumentToCaseResponse{
+			ID:   doc.ID.String(),
+			Name: doc.FileName,
+		})
+
+		rest.SendJSON(w, resp.Status, resp.Payload, resp.Headers) //nolint:errcheck
 	}
 }
