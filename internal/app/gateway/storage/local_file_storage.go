@@ -28,7 +28,7 @@ func (s *LocalFileStorage) fullPath(path string) string {
 func (s *LocalFileStorage) Save(
 	ctx context.Context,
 	path string,
-	file io.Reader,
+	content []byte,
 ) error {
 
 	full := s.fullPath(path)
@@ -44,7 +44,7 @@ func (s *LocalFileStorage) Save(
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, file)
+	_, err = out.Write(content)
 	if err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
@@ -52,18 +52,24 @@ func (s *LocalFileStorage) Save(
 	return nil
 }
 
-func (s *LocalFileStorage) Open(
+func (s *LocalFileStorage) Read(
 	ctx context.Context,
 	path string,
-) (io.ReadCloser, error) {
+) ([]byte, error) {
 	full := s.fullPath(path)
 
 	file, err := os.Open(full)
 	if err != nil {
 		return nil, fmt.Errorf("open file %s: %w", full, err)
 	}
+	defer file.Close()
 
-	return file, nil
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("read file %s: %w", full, err)
+	}
+
+	return data, nil
 }
 
 func (s *LocalFileStorage) Delete(

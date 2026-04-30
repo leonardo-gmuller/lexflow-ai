@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/config"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/port"
 	case_usecase "github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/usecase/case"
@@ -24,7 +26,8 @@ type App struct {
 	Storage     port.Storage
 }
 
-func New(cfg config.Config,
+func New(ctx context.Context,
+	cfg config.Config,
 	db *postgres.Client,
 	queue redisGt.ClientInterface,
 	llm port.LLM,
