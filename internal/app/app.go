@@ -3,10 +3,12 @@ package app
 import (
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/config"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/port"
+	case_usecase "github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/usecase/case"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/usecase/document"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/postgres"
 	redisGt "github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/redis"
 
+	case_repository "github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/postgres/repository/case"
 	documentRepo "github.com/leonardo-gmuller/lexflow-ai/internal/app/gateway/postgres/repository/document"
 )
 
@@ -57,5 +59,12 @@ func (a *App) NewProcessDocumentUsecase(dbtx postgres.DBTX) document.ProcessDocu
 		a.AIExtractor,
 		nil, // chunker - implementar depois
 		a.Embedder,
+		redisGt.NewRedisDocumentQueue(a.Queue),
+	)
+}
+
+func (a *App) NewCaseUseCase(dbtx postgres.DBTX) case_usecase.CaseUseCaseInterface {
+	return case_usecase.NewCaseUseCase(
+		case_repository.NewCaseRepository(dbtx),
 	)
 }

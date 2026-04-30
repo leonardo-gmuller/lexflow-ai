@@ -72,6 +72,8 @@ func RegisterExternalRoutes(
 	a *app.App,
 	cache cache,
 ) {
-	// h := New(cfg, a, cache)
+	h := New(cfg, a, cache)
+
+	h.caseSetupRoutes(router)
 
 }

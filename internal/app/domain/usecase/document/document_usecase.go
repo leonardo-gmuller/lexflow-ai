@@ -12,6 +12,7 @@ import (
 
 type DocumentUsecase struct {
 	documentRepo documentRepository
+	caseRepo     caseRepository
 	storage      storage
 	queue        Queue
 }
@@ -20,6 +21,8 @@ type ProcessDocument struct {
 	docRepo   documentRepository
 	chunkRepo chunkRepository
 	storage   storage
+
+	queue Queue
 
 	extractor textExtractor
 	chunker   chunker
@@ -49,6 +52,7 @@ func NewProcessDocument(
 	extractor textExtractor,
 	chunker chunker,
 	embedder port.Embedder,
+	queue Queue,
 ) ProcessDocumentInterface {
 	return &ProcessDocument{
 		docRepo:   docRepo,
@@ -57,6 +61,7 @@ func NewProcessDocument(
 		extractor: extractor,
 		chunker:   chunker,
 		embedder:  embedder,
+		queue:     queue,
 	}
 }
 

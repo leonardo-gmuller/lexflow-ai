@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/dto"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/entity"
 )
 
@@ -15,12 +16,17 @@ type documentRepository interface {
 	UpdateChunksCount(ctx context.Context, id uuid.UUID, chunksCount int) error
 }
 
+type caseRepository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*entity.Case, error)
+}
+
 type storage interface {
 	Save(ctx context.Context, path string, content []byte) error
 	Read(ctx context.Context, path string) ([]byte, error)
 }
 
 type Queue interface {
+	FetchDueDocuments(ctx context.Context, now time.Time, limit int64) ([]dto.ProcessDocumentJob, error)
 	Publish(ctx context.Context, documentID uuid.UUID, delay time.Duration) error
 }
 

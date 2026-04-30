@@ -30,3 +30,7 @@ func (p Pagination) Validate(fieldsSortBy map[string]bool) error {
 
 	return nil
 }
+
+func (p Pagination) Offset() int {
+	return (p.Page - 1) * p.ItemsPerPage
+}

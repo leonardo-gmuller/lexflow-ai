@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/entity"
+	"github.com/leonardo-gmuller/lexflow-ai/internal/app/domain/erring"
 )
 
 type UploadDOcumentInput struct {
@@ -18,6 +19,11 @@ func (uc *DocumentUsecase) UploadDocument(ctx context.Context, input UploadDOcum
 	docID := uuid.New()
 	path := uc.getDocumentPath(input.CaseID, docID, input.FileName)
 
+	caseEntity, err := uc.caseRepo.GetByID(ctx, input.CaseID)
+	if err != nil {
+		return erring.ErrCaseNotFound
+	}
+
 	//1. Save file in storage
 	if err := uc.storage.Save(ctx, path, input.Content); err != nil {
 		return fmt.Errorf("failed to save document in storage: %w", err)
@@ -26,7 +32,7 @@ func (uc *DocumentUsecase) UploadDocument(ctx context.Context, input UploadDOcum
 	//2. Save document metadata in database
 	document := &entity.Document{
 		ID:       docID,
-		CaseID:   input.CaseID,
+		CaseID:   caseEntity.ID,
 		FileName: input.FileName,
 		Path:     path,
 		Status:   entity.DocumentStatusPending,

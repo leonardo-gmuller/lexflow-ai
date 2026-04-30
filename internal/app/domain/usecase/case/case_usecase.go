@@ -12,7 +12,7 @@ type CaseUseCase struct {
 }
 
 type CaseUseCaseInterface interface {
-	ListAllCases(ctx context.Context) ([]*entity.Case, error)
+	ListAllCases(ctx context.Context, in ListAllCasesInput) (*ListAllCasesOutput, error)
 	GetCaseByID(ctx context.Context, id uuid.UUID) (*entity.Case, error)
 	CreateCase(ctx context.Context, name string, description string) (*entity.Case, error)
 }

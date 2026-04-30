@@ -59,25 +59,58 @@ func (q *Queries) FindCaseByID(ctx context.Context, id uuid.UUID) (Case, error) 
 
 const listCases = `-- name: ListCases :many
 SELECT
+    COUNT(*) OVER()                AS total_count,
     id,
     name,
     description,
     created_at,
     updated_at
 FROM cases
-ORDER BY created_at DESC
+WHERE name ILIKE '%' || $1 || '%'
+ORDER BY
+CASE WHEN $2 = 'name' AND $3 = 'asc' THEN name END ASC,
+    CASE WHEN $2 = 'name' AND $3 = 'desc' THEN name END DESC,
+
+    CASE WHEN $2 = 'created_at' AND $3 = 'asc' THEN created_at END ASC,
+    CASE WHEN $2 = 'created_at' AND $3 = 'desc' THEN created_at END DESC
+LIMIT  $5
+OFFSET $4
 `
 
-func (q *Queries) ListCases(ctx context.Context) ([]Case, error) {
-	rows, err := q.db.Query(ctx, listCases)
+type ListCasesParams struct {
+	SearchTerm pgtype.Text
+	SortBy     interface{}
+	SortOrder  interface{}
+	SqlOffset  int32
+	SqlLimit   int32
+}
+
+type ListCasesRow struct {
+	TotalCount  int64
+	ID          uuid.UUID
+	Name        string
+	Description pgtype.Text
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) ListCases(ctx context.Context, arg ListCasesParams) ([]ListCasesRow, error) {
+	rows, err := q.db.Query(ctx, listCases,
+		arg.SearchTerm,
+		arg.SortBy,
+		arg.SortOrder,
+		arg.SqlOffset,
+		arg.SqlLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Case
+	var items []ListCasesRow
 	for rows.Next() {
-		var i Case
+		var i ListCasesRow
 		if err := rows.Scan(
+			&i.TotalCount,
 			&i.ID,
 			&i.Name,
 			&i.Description,

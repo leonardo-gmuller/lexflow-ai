@@ -9,7 +9,7 @@ import (
 )
 
 func (uc *CaseUseCase) GetCaseByID(ctx context.Context, id uuid.UUID) (*entity.Case, error) {
-	c, err := uc.repo.FindByID(ctx, id)
+	c, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, erring.ErrCaseNotFound
 	}
